@@ -1,0 +1,21 @@
+NOTEEVENTS: '../../datasets/mimiciii/mimic-iii-clinical-database-1.4/NOTEEVENTS.csv'
+PROCEDURES_ICD: '../../datasets/mimiciii/mimic-iii-clinical-database-1.4/PROCEDURES_ICD.csv'
+DATA: 'data'
+
+NER:
+  tag2idx:
+    'B-problem': 1
+    'B-treatment': 2
+    'B-test': 8
+    'I-problem': 3
+    'I-treatment': 7
+    'I-test': 5
+    'X': 6
+    'O': 9
+    '[SEP]': 0
+    '[CLS]': 4
+  max_len: 204
+
+EMBEDDINGS:
+  output_path: '.'
+  filename: i2b2_ner_clinicalbert_l12_mean_l2norm_embeddings_mimic_notes.npz

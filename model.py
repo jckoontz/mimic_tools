@@ -1,7 +1,7 @@
 '''
 NER model
 '''
-
+import torch
 import torch.nn as nn
 from transformers import BertModel, get_linear_schedule_with_warmup, AdamW
 from tqdm import trange
@@ -44,12 +44,21 @@ class NER(nn.Module):
             for _, batch in enumerate(train_dataloader):
                 optimizer.zero_grad()
                 batch = tuple(t.to(self.config['device']) for t in batch)
-                b_input_ids, b_input_mask, b_labels = batch 
+                b_input_ids, b_input_mask, b_labels = batch
                 logits = self.forward(
                     input_ids=b_input_ids,
                     attention_mask=b_input_mask)
-                loss = loss_fn(
-                    logits.view(-1, self.config['num_classes']), b_labels.view(-1))
+                if b_input_mask is not None:
+                    active_loss = b_input_mask.view(-1) == 1
+                    active_logits = logits.view(-1, self.config['num_classes'])
+                    active_labels = torch.where(
+                        active_loss, b_labels.view(-1), torch.tensor(
+                            loss_fn.ignore_index).type_as(b_labels)
+                    )
+                    loss = loss_fn(active_logits, active_labels)
+                else:
+                    loss = loss_fn(
+                        logits.view(-1, self.config['num_classes'], b_labels.view(-1)))
                 loss.backward()
                 train_loss += loss.item()
                 nb_tr_examples += b_input_ids.size(0)
@@ -58,4 +67,4 @@ class NER(nn.Module):
                 optimizer.step()
                 scheduler.step()
                 losses.append(loss.item())
-        print("Train loss: {}".format(train_loss/nb_tr_steps))
+            print("Train loss: {}".format(train_loss/nb_tr_steps))
